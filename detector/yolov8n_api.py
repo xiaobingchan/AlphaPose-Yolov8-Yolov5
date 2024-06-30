@@ -10,10 +10,10 @@ import sys
 sys.path.insert(0, os.path.dirname(__file__))
 from abc import ABC, abstractmethod
 import platform
-
+import cv2
 import torch
 import numpy as np
-
+from ultralytics import YOLO
 from yolov8n.models.experimental import attempt_load
 from yolov8n.utils.general import check_img_size, non_max_suppression
 from yolov8n.utils.general import bbox_iou
@@ -40,13 +40,13 @@ class YOLOV8NDetector(BaseDetector):
         self.confidence = 0.3 if (False if not hasattr(opt, 'tracking') else opt.tracking) else cfg.get('CONFIDENCE',
                                                                                                         0.05)
         self.num_classes = cfg.get('NUM_CLASSES', 80)
-        self.model = None
+        self.model = YOLO("yolov8n.pt")
 
     def load_model(self):
         args = self.detector_opt
 
-        print('Loading YOLOV8S model..')
-        self.model = attempt_load(self.model_weights, map_location=args.device)  # load FP32 model
+        print('Loading YOLOV8N model..')
+        self.model = YOLO("yolov8n.pt")
         self.inp_dim = check_img_size(self.inp_dim, s=self.model.stride.max())  # check img_size
         # self.model = Darknet(self.model_cfg)
         # self.model.load_weights(self.model_weights)
@@ -95,7 +95,10 @@ class YOLOV8NDetector(BaseDetector):
             self.load_model()
         with torch.no_grad():
             imgs = imgs.to(args.device) if args else imgs.cuda()
-            prediction = self.model(imgs)[0]
+            #prediction = self.model(imgs)[0]
+            prediction = self.model.predict(imgs,show= True,save_txt=True)
+            print(type(prediction))
+            print(prediction)
 
             # prediction = self.model(imgs, args=args)
             # do nms to the detection results, only human category is left
@@ -258,7 +261,7 @@ class YOLOV8NDetector(BaseDetector):
         if not self.model:
             self.load_model()
         if isinstance(self.model, torch.nn.DataParallel):
-            self.model = self.model.module
+            self.model = YOLO("yolov8n.pt")
         dets_results = []
         # pre-process(scale, normalize, ...) the image
         img, orig_img, img_dim_list = prep_image(img_name, self.inp_dim)

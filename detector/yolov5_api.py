@@ -96,7 +96,10 @@ class YOLOV5Detector(BaseDetector):
         with torch.no_grad():
             imgs = imgs.to(args.device) if args else imgs.cuda()
             prediction = self.model(imgs)[0]
-
+            
+            print(type(prediction))
+            print(prediction)
+            
             # prediction = self.model(imgs, args=args)
             # do nms to the detection results, only human category is left
             dets = self.dynamic_write_results(prediction, self.confidence,
